@@ -1,0 +1,37 @@
+工程说明：
+
+本工程使用了antlr（http://www.antlr.org）第三方组件。antlr是一个解析并执行结构化文本的工具，例如sql、hql、xml、代数表达式等都是结构化文本，
+甚至java、c、c#等程序设计语言也都属于结构化文本的范畴。
+
+本示例使用antlr v4版本。使用antlr4大致分三步：
+* 手写一个语法文件（以.g4作为文件名后缀）。
+* 通过antlr4提供的工具，从语法文件生成Java、C#等程序文件。
+* 手工继承生成的程序，并书写特定的应用逻辑。
+
+本示例演示的场景是“转换逻辑表达式文本”。例如，对于(a) or (b) and (c)字符串，
+* 如果(a)无效，则转换为(b) and (c)；
+* 如果(b)无效，则转换为(a) or (c)；
+* 如果(c)无效，则转换为(a) or (b)；
+* 如果全都无效，则转换为null。
+* 等等
+
+也就是说，如果一个变量无效，则要删除该变量以及其左边或右边的操作符，至于要删除哪个操作符则要视其语义来决定。
+例如上例中，对于变量(b)，其语义是与右边的(c)结合，因此删除(b)时要同时删除与(c)的操作符（and），其最终结果为(a) or (c)。
+又如，对于((a) or (b)) and (c)，则当删除(b)时要同时删除与(a)的操作符，其结果为((a)) and (c)。
+
+一、程序说明
+* 我们在pom.xml里定义了两个插件，一个是antlr4-maven-plugin，另一个是build-helper-maven-plugin。
+antlr4-maven-plugin将从*.g4语法文件生成Java代码，并保存在target/generated-sources/antlr4目录下。
+build-helper-maven-plugin负责把该目录设置为源目录，以使得maven不仅从src/main/java也从该源目录中去找源程序。
+
+本例中，我们定义了LogicExpr.g4语法文件，并放在相对于根src/main/java的com/wisetop/antlr4/le子目录下，
+antlr4-maven-plugin将从根及其子目录下寻找g4语法文件，并根据相对路径动态生成Java文件的package部分。
+
+* 在svn或git中不需要保存自动生成的Java文件，而是每次编译时都让maven自动调用上面的插件去生成。
+* 其它说明请参见LogicExprRewriter.java中的注释。
+* 在Eclipse里，如果你修改了.g4语法文件，则要手工执行：右键工程 -> Run As -> Maven generate-sources，以此重新生成Java文件。为保险起见再F5刷新工程。
+
+二、运行单元测试
+你可以在DOS命令行或Eclipse里运行单元测试。若要在DOS命令行运行，请执行“mvn clean test”即可。
+
+三、其它
